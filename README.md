@@ -1,2 +1,3 @@
-# go-zns-wrapper
-Go ZNS Wrapper
+# zalo-go-sdk
+
+Go SDK for Zalo
