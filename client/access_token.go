@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-type AccessTokenRequest struct {
-	Code         string `json:"code"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-type AccessTokenResponse struct {
+type AccessToken struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+}
+
+type AccessTokenRequest struct {
+	Code         string `json:"code"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 // GetAccessToken exchanges an authorization code for an access token.
@@ -26,8 +26,8 @@ type AccessTokenResponse struct {
 // The request includes the authorization code, app ID, and code verifier.
 // On success, it returns the access token, refresh token, and expiration time.
 // If an error occurs during the request or response processing, it returns the error.
-func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequest) (AccessTokenResponse, error) {
-	var response AccessTokenResponse
+func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
+	var response AccessToken
 
 	// Set up the form data
 	formData := url.Values{}
@@ -63,12 +63,13 @@ func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequ
 		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
 		return response, err
 	}
+	z.SetAccessToken(response)
 
 	return response, nil
 }
 
-func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessTokenRequest) (AccessTokenResponse, error) {
-	var response AccessTokenResponse
+func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
+	var response AccessToken
 
 	// Set up the form data
 	formData := url.Values{}
@@ -103,6 +104,7 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
 		return response, err
 	}
+	z.SetAccessToken(response)
 
 	return response, nil
 }
