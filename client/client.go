@@ -8,23 +8,21 @@ import (
 )
 
 type ZaloClient struct {
-	httpClient *http.Client
-	logger     *slog.Logger
-
-	AppID         string `json:"app_id" mapstructure:"app_id"`
-	SecretKey     string `json:"secret_key" mapstructure:"secret_key"`
-	CodeVerifier  string `json:"code_verifier" mapstructure:"code_verifier"`
-	CodeChallenge string `json:"code_challenge" mapstructure:"code_challenge"`
-
-	token AccessToken `json:"token" mapstructure:"token"`
+	httpClient    *http.Client
+	logger        *slog.Logger
+	token         AccessToken
+	appID         string
+	secretKey     string
+	codeVerifier  string
+	codeChallenge string
 }
 
 func NewZaloClient(appID, secretKey, codeVerifier string) *ZaloClient {
 	return &ZaloClient{
-		AppID:         appID,
-		SecretKey:     secretKey,
-		CodeVerifier:  codeVerifier,
-		CodeChallenge: pkce.GetCodeChallenge(codeVerifier),
+		appID:         appID,
+		secretKey:     secretKey,
+		codeVerifier:  codeVerifier,
+		codeChallenge: pkce.GetCodeChallenge(codeVerifier),
 	}
 }
 
@@ -52,4 +50,8 @@ func (z *ZaloClient) GetLogger() *slog.Logger {
 
 func (z *ZaloClient) SetAccessToken(token AccessToken) {
 	z.token = token
+}
+
+func (z *ZaloClient) GetAccessToken() AccessToken {
+	return z.token
 }

@@ -21,20 +21,20 @@ type AccessTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-// GetAccessToken exchanges an authorization code for an access token.
+// RequestAccessToken exchanges an authorization code for an access token.
 // It sends a POST request to the Zalo API using the provided context and request data.
 // The request includes the authorization code, app ID, and code verifier.
 // On success, it returns the access token, refresh token, and expiration time.
 // If an error occurs during the request or response processing, it returns the error.
-func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
+func (z *ZaloClient) RequestAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
 	var response AccessToken
 
 	// Set up the form data
 	formData := url.Values{}
 	formData.Set("code", request.Code)
-	formData.Set("app_id", z.AppID)
+	formData.Set("app_id", z.appID)
 	formData.Set("grant_type", "authorization_code")
-	formData.Set("code_verifier", z.CodeVerifier)
+	formData.Set("code_verifier", z.codeVerifier)
 
 	req, err := http.NewRequest("POST", ENDPOINT_GET_ACCESS_TOKEN, strings.NewReader(formData.Encode()))
 	if err != nil {
@@ -43,7 +43,7 @@ func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequ
 	}
 	// Set headers
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("secret_key", z.SecretKey)
+	req.Header.Add("secret_key", z.secretKey)
 	resp, err := z.GetHTTPClient().Do(req)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error sending request:", slog.Any("err", err))
@@ -63,7 +63,6 @@ func (z *ZaloClient) GetAccessToken(ctx context.Context, request AccessTokenRequ
 		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
 		return response, err
 	}
-	z.SetAccessToken(response)
 
 	return response, nil
 }
@@ -74,7 +73,7 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 	// Set up the form data
 	formData := url.Values{}
 	formData.Set("refresh_token", request.RefreshToken)
-	formData.Set("app_id", z.AppID)
+	formData.Set("app_id", z.appID)
 	formData.Set("grant_type", "refresh_token")
 
 	req, err := http.NewRequest("POST", ENDPOINT_GET_ACCESS_TOKEN, strings.NewReader(formData.Encode()))
@@ -84,7 +83,7 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 	}
 	// Set headers
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("secret_key", z.SecretKey)
+	req.Header.Add("secret_key", z.secretKey)
 	resp, err := z.GetHTTPClient().Do(req)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error sending request:", slog.Any("err", err))
@@ -104,7 +103,6 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
 		return response, err
 	}
-	z.SetAccessToken(response)
 
 	return response, nil
 }
