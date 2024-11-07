@@ -3,22 +3,29 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 type AccessToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
+	AccessToken  string `json:"access_token" mapstructure:"access_token"`
+	RefreshToken string `json:"refresh_token" mapstructure:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in" mapstructure:"expires_in"`
 }
 
 type AccessTokenRequest struct {
-	Code         string `json:"code"`
-	RefreshToken string `json:"refresh_token"`
+	Code         string `json:"code" mapstructure:"code"`
+	RefreshToken string `json:"refresh_token" mapstructure:"refresh_token"`
+}
+
+type ErrorResp struct {
+	Error            int    `json:"error" mapstructure:"error"`
+	ErrorDescription string `json:"error_description" mapstructure:"error_description"`
 }
 
 // RequestAccessToken exchanges an authorization code for an access token.
@@ -27,7 +34,7 @@ type AccessTokenRequest struct {
 // On success, it returns the access token, refresh token, and expiration time.
 // If an error occurs during the request or response processing, it returns the error.
 func (z *ZaloClient) RequestAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
-	var response AccessToken
+	var token AccessToken
 
 	// Set up the form data
 	formData := url.Values{}
@@ -39,7 +46,7 @@ func (z *ZaloClient) RequestAccessToken(ctx context.Context, request AccessToken
 	req, err := http.NewRequest("POST", ENDPOINT_GET_ACCESS_TOKEN, strings.NewReader(formData.Encode()))
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error creating request:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 	// Set headers
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -47,7 +54,7 @@ func (z *ZaloClient) RequestAccessToken(ctx context.Context, request AccessToken
 	resp, err := z.GetHTTPClient().Do(req)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error sending request:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 	defer resp.Body.Close()
 
@@ -55,20 +62,32 @@ func (z *ZaloClient) RequestAccessToken(ctx context.Context, request AccessToken
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error reading response:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 
-	err = json.Unmarshal(body, &response)
+	var respBody map[string]string
+	err = json.Unmarshal(body, &respBody)
 	if err != nil {
-		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
-		return response, err
+		var errResp ErrorResp
+		err = json.Unmarshal(body, &errResp)
+		if err != nil {
+			z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
+			return token, err
+		}
+		err = fmt.Errorf("code: %d, description: %s", errResp.Error, errResp.ErrorDescription)
+		z.GetLogger().ErrorContext(ctx, "Error:", slog.Any("err", err))
+		return token, err
 	}
 
-	return response, nil
+	token.AccessToken = respBody["access_token"]
+	token.RefreshToken = respBody["refresh_token"]
+	token.ExpiresIn, _ = strconv.Atoi(respBody["expires_in"])
+
+	return token, nil
 }
 
 func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessTokenRequest) (AccessToken, error) {
-	var response AccessToken
+	var token AccessToken
 
 	// Set up the form data
 	formData := url.Values{}
@@ -79,7 +98,7 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 	req, err := http.NewRequest("POST", ENDPOINT_GET_ACCESS_TOKEN, strings.NewReader(formData.Encode()))
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error creating request:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 	// Set headers
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -87,7 +106,7 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 	resp, err := z.GetHTTPClient().Do(req)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error sending request:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 	defer resp.Body.Close()
 
@@ -95,14 +114,26 @@ func (z *ZaloClient) RefreshAccessToken(ctx context.Context, request AccessToken
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		z.GetLogger().ErrorContext(ctx, "Error reading response:", slog.Any("err", err))
-		return response, err
+		return token, err
 	}
 
-	err = json.Unmarshal(body, &response)
+	var respBody map[string]string
+	err = json.Unmarshal(body, &respBody)
 	if err != nil {
-		z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
-		return response, err
+		var errResp ErrorResp
+		err = json.Unmarshal(body, &errResp)
+		if err != nil {
+			z.GetLogger().ErrorContext(ctx, "Error unmarshalling response:", slog.Any("err", err))
+			return token, err
+		}
+		err = fmt.Errorf("code: %d, description: %s", errResp.Error, errResp.ErrorDescription)
+		z.GetLogger().ErrorContext(ctx, "Error:", slog.Any("err", err))
+		return token, err
 	}
 
-	return response, nil
+	token.AccessToken = respBody["access_token"]
+	token.RefreshToken = respBody["refresh_token"]
+	token.ExpiresIn, _ = strconv.Atoi(respBody["expires_in"])
+
+	return token, nil
 }
