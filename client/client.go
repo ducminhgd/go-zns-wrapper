@@ -55,3 +55,11 @@ func (z *ZaloClient) SetAccessToken(token AccessToken) {
 func (z *ZaloClient) GetAccessToken() AccessToken {
 	return z.token
 }
+
+func (z *ZaloClient) GetCodeVerifier() string {
+	return z.codeVerifier
+}
+
+func (z *ZaloClient) GetCodeChallenge() string {
+	return z.codeChallenge
+}

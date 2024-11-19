@@ -9,14 +9,13 @@ import (
 )
 
 func main() {
-	appID := os.Getenv("ZALO_APP_ID")
-	secretKey := os.Getenv("ZALO_SECRET_KEY")
-	codeVerifier := os.Getenv("ZALO_CODE_VERIFIER")
-	znsCode := os.Getenv("ZNS_CODE")
-
-	zc := client.NewZaloClient(appID, secretKey, codeVerifier)
+	zc := client.NewZaloClient(
+		os.Getenv("ZALO_APP_ID"),
+		os.Getenv("ZALO_SECRET_KEY"),
+		os.Getenv("ZALO_CODE_VERIFIER"),
+	)
 	token, err := zc.RequestAccessToken(context.Background(), client.AccessTokenRequest{
-		Code: znsCode,
+		Code: os.Getenv("ZNS_CODE"),
 	})
 	if err != nil {
 		panic(err)
