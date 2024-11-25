@@ -22,7 +22,7 @@ const (
 	ZNS_TPL_STATUS_ENABLED_NAME        = "ENABLE"
 	ZNS_TPL_STATUS_PENDING_REVIEW_NAME = "PENDING_REVIEW"
 	ZNS_TPL_STATUS_REJECTED_NAME       = "REJECT"
-	ZNS_TPL_STATUS_DISABLED_NAME       = "ENABLE"
+	ZNS_TPL_STATUS_DISABLED_NAME       = "DISABLE"
 )
 
 type ZnsTplListRequest struct {
@@ -33,7 +33,7 @@ type ZnsTplListRequest struct {
 
 type ZnsTplListRecord struct {
 	TemplateID      int    `json:"templateId"`
-	TemplateName    int    `json:"templateName"`
+	TemplateName    string `json:"templateName"`
 	CreatedTime     int    `json:"createdTime"`
 	Status          string `json:"status"`
 	TemplateQuality string `json:"templateQuality"`
@@ -143,12 +143,12 @@ type ZnsTplDetailResponse struct {
 // The request includes the template ID as a query string parameter.
 // On success, it returns the template detail response.
 // If an error occurs during the request or response processing, it returns the error.
-func (z *ZaloClient) GetZnsTemplateDetail(ctx context.Context, templateID int) (ZnsTplDetailResponse, error) {
+func (z *ZaloClient) GetZnsTemplateDetail(ctx context.Context, templateID string) (ZnsTplDetailResponse, error) {
 	var response ZnsTplDetailResponse
 
 	// Set up the query string parameters
 	query := url.Values{}
-	query.Set("template_id", strconv.Itoa(templateID))
+	query.Set("template_id", templateID)
 
 	// Create the request URL with the query string parameters
 	reqUrl := fmt.Sprintf("%s?%s", ENDPOINT_TEMPLATE_DETAIL, query.Encode())

@@ -14,6 +14,11 @@ func main() {
 		os.Getenv("ZALO_SECRET_KEY"),
 		os.Getenv("ZALO_CODE_VERIFIER"),
 	)
+
+	// CODE VERIFIER: ThisIsCodeVerifierToCreateCodeChallenge
+	// CODE CHALLENGE: UMmgzWBy-6hAVyG8y-UD1tufv8rxiZP9AXJXrb8blYg
+	fmt.Printf("Code Challenge: %+v\n", zc.GetCodeChallenge())
+
 	token, err := zc.RequestAccessToken(context.Background(), client.AccessTokenRequest{
 		Code: os.Getenv("ZNS_CODE"),
 	})
@@ -21,7 +26,7 @@ func main() {
 		panic(err)
 	}
 	zc.SetAccessToken(token)
-	fmt.Println(token)
+	fmt.Printf("First Access Token: %+v\n", token)
 
 	token, err = zc.RefreshAccessToken(context.Background(), client.AccessTokenRequest{
 		RefreshToken: token.RefreshToken,
@@ -30,5 +35,5 @@ func main() {
 		panic(err)
 	}
 	zc.SetAccessToken(token)
-	fmt.Println(token)
+	fmt.Printf("After Refresh Token: %+v\n", token)
 }
